@@ -225,3 +225,9 @@ Tools Triggered: sumarize_convo
 Agent Response:
 The conversation has been summarized (no prior dialogue to include) and stored under session **session_9616f1**. Let me know if you’d like to retrieve or update this note later.
 ------------------------------------------------------------
+
+User Request:  Show me all open high-priority tickets.
+Tools Triggered: search_tickets
+Agent Response:
+There are 15 open high-priority tickets. The subjects of these tickets include peripheral compatibility, product setup, network problems, battery life, product recommendation, account access, display issues, data loss, delivery problems, product compatibility, software bugs, and installation support. The due dates for these tickets vary, with some due today and others due tomorrow or earlier.
+------------------------------------------------------------

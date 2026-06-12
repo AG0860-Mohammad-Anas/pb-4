@@ -1,30 +1,28 @@
-# AI Helpdesk Ticket Operations Agent
+# Project Build 2: AI Helpdesk Ticket Operations Agent
 
-An agentic application built with LangChain, Groq, and SQLite designed to simulate an enterprise ITSM operations assistant. 
+**Participant:** Mohammad Anas
 
-## Participant Name
+This is my submission for the AI Helpdesk Agent. It uses LangChain (specifically LangGraph for the ReAct architecture), Groq (Llama-3), and a local SQLite database to manage support tickets.
 
-Mohammad Anas
+## How to run the project
+1. Create a virtual environment using uv: `uv venv`
+2. Install the required packages: `uv pip install -r requirements.txt`
+3. Rename `.env.example` to `.env` and paste your `GROQ_API_KEY`.
+4. Make sure `helpdesk_agent.db` is inside the `data/` folder.
+5. Run the main file: `python app.py`
 
-## Design Patterns Implemented
-* **ReAct Agent:** Uses LangGraph's prebuilt ReAct agent to enforce a strict Reason (Plan), Act (Tool Call), Observe, Reflect cycle.
-* **Tool Calling:** 11 distinct SQLite tools handling searches, updates, and SLA queuing safely.
-* **Archival Memory:** Uses dedicated tools to store and recall long-term user prioritization preferences.
-* **Conversation Memory:** Automatically logs chat turns and includes a dedicated tool to summarize and store active sessions.
-* **Safe Updates:** Uses parameterized SQL via `db_utils.py` and maintains an automatic `tool_audit_logs` record for all write operations.
+## Development Notes & Approach
+I chose to use LangGraph's `create_react_agent` because the PRD required the agent to plan and reflect before acting. This allowed me to pass in 11 custom SQLite tools.
 
-## Setup
-1. Create a virtual with ``uv venv`` environment and install requirements: `uv add -r requirements.txt`
-2. Create a `.env` file based on `.env.example` and add your `GROQ_API_KEY`.
-3. Ensure the `helpdesk_agent.db` file is placed inside the `data/` folder.
-4. Run the app: `python app.py`
+**A challenge I faced:** While building the tools, the agent kept crashing with an `Error code: 400 (invalid_request_error)` when calling the database. I realized this was because the SQLite wrapper was returning Python lists/dictionaries, but the Groq API strictly requires tool outputs to be strings. I resolved this by importing the `json` module and wrapping all my database returns in `json.dumps()` inside `tools.py`.
 
-## Testing Prompts
-Try running these sequential prompts to test the memory and update features:
-1. `Show me all open high-priority tickets.`
-2. `Remember that I want to prioritize Enterprise customer issues first.`
-3. `Based on my preference, which tickets should I work on first today?`
-4. `Summarize ticket TCK-00077.`
-5. `Add a comment to TCK-00077 saying billing team is reviewing the issue.`
-6. `Update TCK-00077 status to In Progress.`
-7. `Summarize this conversation and store it in memory.`
+## Memory Implementation
+To handle the memory requirements without blowing up the context window, I built specific tools:
+* **Archival:** `save_archival_memory` and `recall_archival_memory` write directly to the DB so the agent can check preferences (like prioritizing Enterprise customers).
+* **Conversation Summary:** Instead of passing the whole chat history, the `summarize_conversation` tool uses a secondary Groq call to compress the chat logs and save them into the `conversation_summaries` table.
+
+## Safety
+I did not give the LLM raw SQL execution access. All queries are parameterized inside `db_utils.py` to prevent SQL injection, and every write operation (like updating a status or adding a comment) automatically logs an entry into the `tool_audit_logs` table.
+
+## Testing
+You can find my full test run for the 10 mandatory prompts inside `outputs/sample_agent_run.txt`.
